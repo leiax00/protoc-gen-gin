@@ -1,0 +1,28 @@
+syntax = "proto3";
+option go_package = "github.com/leiax00/protoc-gen-gin/example/api/demo/v1";
+package product.app.v1;
+import "google/api/annotations.proto";
+
+service DemoService {
+  rpc GetDemoM1(DemoReq) returns (DemoResp) {
+    //
+    // 可以通过添加 additional_bindings 使一个 rpc 方法对应多个路由
+    option (google.api.http) = {
+      get: "/v1/route1"
+      additional_bindings {
+        get: "/v1/route2/{param_1}"
+      }
+    };
+  }
+}
+
+message DemoReq {
+  // @inject_tag: form:"p1"
+  string param1 = 1;
+  string param2 = 2;
+}
+
+message DemoResp {
+  string v1 = 1;
+  string v2 = 2;
+}
