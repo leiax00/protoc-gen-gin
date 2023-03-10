@@ -18,114 +18,109 @@ type DemoServiceHttpServer interface {
 	GetDemoM1(context.Context, *DemoReq) (*DemoResp, error)
 }
 
-func RegisterDemoServiceHttpServer(r gin.IRouter, srv DemoServiceHttpServer) {
-	r.Handle("GET", "/v1/route1", _DemoServiceGetDemoM10(srv))
-	r.Handle("GET", "/v1/route2/:param_1", _DemoServiceGetDemoM11(srv))
+type DemoServiceCtl struct {
+	srv DemoServiceHttpServer
 }
 
-// Resp 返回值
-type defaultDemoServiceResp struct{}
+func RegisterDemoServiceHttpServer(r gin.IRouter, srv DemoServiceHttpServer) {
+	ctl := &DemoServiceCtl{srv}
+	r.Handle("GET", "/v1/route1", ctl._GetDemoM10)
+	r.Handle("GET", "/v1/route2/:param_1", ctl._GetDemoM11)
+}
 
-func (resp defaultDemoServiceResp) response(ctx *gin.Context, status, code int, msg string, data interface{}) {
-	ctx.JSON(status, map[string]interface{}{
-		"code": code,
+func (ctl *DemoServiceCtl) _GetDemoM10(ctx *gin.Context) {
+	var in DemoReq
+
+	if err := ctx.ShouldBindQuery(&in); err != nil {
+		ctl.paramsError(ctx, err)
+		return
+	}
+
+	md := metadata.New(nil)
+	for k, v := range ctx.Request.Header {
+		md.Set(k, v...)
+	}
+	newCtx := metadata.NewIncomingContext(ctx, md)
+	out, err := ctl.srv.GetDemoM1(newCtx, &in)
+	if err != nil {
+		ctl.error(ctx, err)
+		return
+	}
+	ctl.ok(ctx, out)
+}
+
+func (ctl *DemoServiceCtl) _GetDemoM11(ctx *gin.Context) {
+	var in DemoReq
+
+	if err := ctx.ShouldBindUri(&in); err != nil {
+		ctl.paramsError(ctx, err)
+		return
+	}
+
+	if err := ctx.ShouldBindQuery(&in); err != nil {
+		ctl.paramsError(ctx, err)
+		return
+	}
+
+	md := metadata.New(nil)
+	for k, v := range ctx.Request.Header {
+		md.Set(k, v...)
+	}
+	newCtx := metadata.NewIncomingContext(ctx, md)
+	out, err := ctl.srv.GetDemoM1(newCtx, &in)
+	if err != nil {
+		ctl.error(ctx, err)
+		return
+	}
+	ctl.ok(ctx, out)
+}
+
+func (ctl *DemoServiceCtl) response(ctx *gin.Context, httpCode, rpcCode int, msg string, data interface{}) {
+	ctx.JSON(httpCode, map[string]interface{}{
+		"code": rpcCode,
 		"msg":  msg,
 		"data": data,
 	})
 }
 
-// Error 返回错误信息
-func (resp defaultDemoServiceResp) Error(ctx *gin.Context, err error) {
-	code := -1
-	status := 500
-	msg := "未知错误"
+func (ctl *DemoServiceCtl) error(ctx *gin.Context, err error) {
+	httpCode := 500
+	rpcCode := -1
+	reason := "UNKNOWN_ERR"
+	msg := "UNKNOWN_ERR"
 
 	if err == nil {
 		msg += ", err is nil"
-		resp.response(ctx, status, code, msg, nil)
+		ctl.response(ctx, httpCode, rpcCode, msg, nil)
 		return
 	}
 
 	type iCode interface {
-		HTTPCode() int
-		Message() string
-		Code() int
+		GetCode() int32
+		GetGrpcCode() int32
+		GetReason() string
+		GetMessage() string
 	}
 
 	var c iCode
 	if errors.As(err, &c) {
-		status = c.HTTPCode()
-		code = c.Code()
-		msg = c.Message()
+		httpCode = int(c.GetCode())
+		rpcCode = int(c.GetGrpcCode())
+		reason = c.GetReason()
+		msg = c.GetMessage()
 	}
 
 	_ = ctx.Error(err)
 
-	resp.response(ctx, status, code, msg, nil)
+	ctl.response(ctx, httpCode, rpcCode, reason, nil)
 }
 
-// ParamsError 参数错误
-func (resp defaultDemoServiceResp) ParamsError(ctx *gin.Context, err error) {
+func (ctl *DemoServiceCtl) paramsError(ctx *gin.Context, err error) {
 	_ = ctx.Error(err)
-	resp.response(ctx, 400, 400, "参数错误", nil)
+	ctl.response(ctx, 400, 400, "PARAM_ERR", nil)
 }
 
-// Success 返回成功信息
-func (resp defaultDemoServiceResp) Success(ctx *gin.Context, data interface{}) {
-	resp.response(ctx, 200, 0, "成功", data)
-}
-
-func _DemoServiceGetDemoM10(srv DemoServiceHttpServer) func(ctx *gin.Context) {
-	return func(ctx *gin.Context) {
-		var in DemoReq
-		var resp = defaultDemoServiceResp{}
-
-		if err := ctx.ShouldBindQuery(&in); err != nil {
-			resp.ParamsError(ctx, err)
-			return
-		}
-
-		md := metadata.New(nil)
-		for k, v := range ctx.Request.Header {
-			md.Set(k, v...)
-		}
-		newCtx := metadata.NewIncomingContext(ctx, md)
-		out, err := srv.GetDemoM1(newCtx, &in)
-		if err != nil {
-			resp.Error(ctx, err)
-			return
-		}
-
-		resp.Success(ctx, out)
-	}
-}
-
-func _DemoServiceGetDemoM11(srv DemoServiceHttpServer) func(ctx *gin.Context) {
-	return func(ctx *gin.Context) {
-		var in DemoReq
-		var resp = defaultDemoServiceResp{}
-
-		if err := ctx.ShouldBindUri(&in); err != nil {
-			resp.ParamsError(ctx, err)
-			return
-		}
-
-		if err := ctx.ShouldBindQuery(&in); err != nil {
-			resp.ParamsError(ctx, err)
-			return
-		}
-
-		md := metadata.New(nil)
-		for k, v := range ctx.Request.Header {
-			md.Set(k, v...)
-		}
-		newCtx := metadata.NewIncomingContext(ctx, md)
-		out, err := srv.GetDemoM1(newCtx, &in)
-		if err != nil {
-			resp.Error(ctx, err)
-			return
-		}
-
-		resp.Success(ctx, out)
-	}
+func (ctl *DemoServiceCtl) ok(ctx *gin.Context, data interface{}) {
+	var msg string
+	ctl.response(ctx, 200, 0, msg, data)
 }
