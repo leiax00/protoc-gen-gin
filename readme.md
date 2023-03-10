@@ -42,3 +42,11 @@ protoc --proto_path=./third_party \
         --gin_opt=paths=source_relative \
         example/api/demo/v1/api.proto
 ```
+## 针对inject tag进行生成
+在生成`*.pb.go`之后通过 `[protoc-go-inject-tag](https://github.com/favadi/protoc-go-inject-tag)` 生成自定义tag
+```shell
+go install github.com/favadi/protoc-go-inject-tag@latest
+protoc-go-inject-tag -input="*.pb.go"
+# 生成自定义tag后删除注释tag
+protoc-go-inject-tag -input="*.pb.go" -remove_tag_comment
+```
