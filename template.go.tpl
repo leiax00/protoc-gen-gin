@@ -54,12 +54,12 @@ func (ctl *{{$.Name}}Ctl) _{{ .HandlerName }}(ctx *gin.Context) {
 }
 {{end}}
 
-func (ctl *{{$.Name}}Ctl) response(ctx *gin.Context, httpCode, rpcCode int, msg string, data interface{})  {
-	ctx.JSON(httpCode, map[string]interface{}{
-		"code": rpcCode,
-		"msg": msg,
-		"data": data,
-	})
+func (ctl *{{$.Name}}Ctl) response(ctx *gin.Context, httpCode, rpcCode int, msg any, data any)  {
+	ctx.JSON(httpCode, struct {
+    Code int `json:"code"`
+    Msg any `json:"msg,omitempty"`
+    Data any `json:"data,omitempty"`
+  }{rpcCode, msg, data})
 }
 
 func (ctl *{{$.Name}}Ctl) error(ctx *gin.Context, err error)  {
@@ -99,7 +99,6 @@ func (ctl *{{$.Name}}Ctl) paramsError (ctx *gin.Context, err error) {
 	ctl.response(ctx, 400, 400, "PARAM_ERR", nil)
 }
 
-func (ctl *{{$.Name}}Ctl) ok(ctx *gin.Context, data interface{}) {
-	var msg string
-	ctl.response(ctx, 200, 0, msg, data)
+func (ctl *{{$.Name}}Ctl) ok(ctx *gin.Context, data any) {
+	ctl.response(ctx, 200, 0, nil, data)
 }
