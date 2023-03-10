@@ -33,4 +33,12 @@ service DemoService {
 ## 生成命令
 ```shell
 protoc --proto_path=./third_party -I ./example/api --go_out ./example/api --go_opt=paths=source_relative --gin_out ./example/api --gin_opt=paths=source_relative example/api/demo/v1/api.proto
+# 换行
+protoc --proto_path=./third_party \
+        -I ./example/api \
+        --go_out ./example/api \
+        --go_opt=paths=source_relative \
+        --gin_out ./example/api \
+        --gin_opt=paths=source_relative \
+        example/api/demo/v1/api.proto
 ```
