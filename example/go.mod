@@ -4,9 +4,10 @@ go 1.19
 
 require (
 	github.com/gin-gonic/gin v1.9.0
-	google.golang.org/genproto v0.0.0-20230303212802-e74f57abe488
+	github.com/gogo/protobuf v1.3.2
+	google.golang.org/genproto v0.0.0-20230306155012-7f2fa6fef1f4
 	google.golang.org/grpc v1.53.0
-	google.golang.org/protobuf v1.28.1
+	google.golang.org/protobuf v1.29.1
 )
 
 require (

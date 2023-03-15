@@ -5,8 +5,9 @@
 1. [go -> 中文社区下载](https://studygolang.com/dl) -- (go version > 1.16)
 2. [protoc](https://github.com/protocolbuffers/protobuf/releases)
 3. [protoc-gen-go](https://github.com/protocolbuffers/protobuf-go/releases)
-4. [gin](https://github.com/gin-gonic/gin)
-5. [protoc-go-inject-tag](https://github.com/favadi/protoc-go-inject-tag)
+4. [protoc-gen-gogo: `go install github.com/gogo/protobuf/protoc-gen-gogo@latest`](https://github.com/gogo/protobuf/blob/master/protoc-gen-gogo)
+5. [gin](https://github.com/gin-gonic/gin)
+6. [protoc-go-inject-tag](https://github.com/favadi/protoc-go-inject-tag)
 
 ## 基本使用
 ```shell
@@ -32,15 +33,15 @@ service DemoService {
 ```
 ## 生成命令
 ```shell
-protoc --proto_path=./third_party -I ./example/api --go_out ./example/api --go_opt=paths=source_relative --gin_out ./example/api --gin_opt=paths=source_relative example/api/demo/v1/api.proto
+# 生成 example/api/common/v1/common.proto  -- 包含任意类型的自定义类型实现
+protoc -I ./example/api --gogo_out=paths=source_relative:./example/api example/api/common/v1/common.proto
+# inject tag: common.proto
+protoc-go-inject-tag -input="example/api/common/v1/*.pb.go"
+
+# 生成 example/api/demo/v1/api.proto
+protoc -I ./example/api --gogo_out=paths=source_relative:./example/api --gin_out=paths=source_relative:./example/api example/api/demo/v1/api.proto
+
 # 换行
-protoc --proto_path=./third_party \
-        -I ./example/api \
-        --go_out ./example/api \
-        --go_opt=paths=source_relative \
-        --gin_out ./example/api \
-        --gin_opt=paths=source_relative \
-        example/api/demo/v1/api.proto
 ```
 ## 针对inject tag进行生成
 在生成`*.pb.go`之后通过 `[protoc-go-inject-tag](https://github.com/favadi/protoc-go-inject-tag)` 生成自定义tag

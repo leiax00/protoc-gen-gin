@@ -1,11 +1,14 @@
 syntax = "proto3";
-option go_package = "github.com/leiax00/protoc-gen-gin/example/api/demo/v1";
-package product.app.v1;
+
+package api.demo.v1;
+
 import "google/api/annotations.proto";
+import "common/v1/common.proto";
+option go_package = "github.com/leiax00/protoc-gen-gin/example/api/demo/v1:api";
+
 
 service DemoService {
-  rpc GetDemoM1(DemoReq) returns (DemoResp) {
-    //
+  rpc GetDemoM1(DemoReq) returns (api.common.v1.Any) {
     // 可以通过添加 additional_bindings 使一个 rpc 方法对应多个路由
     option (google.api.http) = {
       get: "/v1/route1"
